@@ -217,6 +217,109 @@ let currentBookWorld = null;
 let currentSubject = null;
 let currentTopic = null;
 let isTransitioning = false;
+let activeCatalogBook = null;
+let catalogMoving = false;
+
+// ============================================================
+// 9a. CATALOG SIDEBAR
+// ============================================================
+
+const catalogEl = document.getElementById('catalog');
+const catalogList = document.getElementById('catalog-list');
+const catalogToggle = document.getElementById('catalog-toggle');
+const catalogTab = document.getElementById('catalog-tab');
+
+// Build catalog items
+SUBJECTS.forEach((subject, i) => {
+  const item = document.createElement('div');
+  item.className = 'catalog-item';
+  item.dataset.subjectId = subject.id;
+  item.innerHTML = `<span class="catalog-item-num">${String(i + 1).padStart(2, '0')}</span><span class="catalog-item-title">${subject.shortTitle}</span>`;
+  item.addEventListener('click', () => {
+    if (catalogMoving || isTransitioning) return;
+    const book = books.find(b => b.subject.id === subject.id);
+    if (!book) return;
+    focusOnBook(book);
+  });
+  catalogList.appendChild(item);
+});
+
+catalogToggle.addEventListener('click', () => {
+  catalogEl.classList.toggle('collapsed');
+});
+catalogTab.addEventListener('click', () => {
+  catalogEl.classList.remove('collapsed');
+});
+
+// Smooth camera move to a book (without entering it)
+function focusOnBook(book) {
+  if (cameraRig.getState() !== CameraState.UNIVERSE) return;
+  if (!controls.enabled) return;
+
+  // Set active catalog item
+  catalogList.querySelectorAll('.catalog-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.subjectId === book.subject.id);
+  });
+  activeCatalogBook = book;
+
+  // Highlight the book
+  books.forEach(b => {
+    if (b === book) {
+      b.setHover(true);
+      b.setDim(0);
+    } else {
+      b.setHover(false);
+      b.setDim(0.3);
+    }
+  });
+
+  // Smooth camera move
+  catalogMoving = true;
+  controls.enabled = false;
+
+  const bookPos = new THREE.Vector3();
+  book.group.getWorldPosition(bookPos);
+
+  const targetCamPos = new THREE.Vector3(
+    bookPos.x * 0.75,
+    bookPos.y + 1.5,
+    bookPos.z + 28
+  );
+  const startCamPos = camera.position.clone();
+  const startTarget = controls.target.clone();
+  const targetTarget = bookPos.clone();
+
+  let moveTime = 0;
+  const moveDuration = 1.8;
+
+  function animateMove() {
+    moveTime += 1 / 60;
+    const t = Math.min(1, moveTime / moveDuration);
+    const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+    camera.position.lerpVectors(startCamPos, targetCamPos, eased);
+    controls.target.lerpVectors(startTarget, targetTarget, eased);
+    camera.lookAt(controls.target);
+
+    if (t < 1) {
+      requestAnimationFrame(animateMove);
+    } else {
+      controls.enabled = true;
+      catalogMoving = false;
+
+      // Reset dim after a moment
+      setTimeout(() => {
+        if (activeCatalogBook === book) {
+          books.forEach(b => {
+            b.setHover(false);
+            b.setDim(0);
+          });
+        }
+      }, 2000);
+    }
+  }
+  animateMove();
+}
 
 // --- Enter a book (from universe) ---
 function enterBook(book) {
@@ -227,6 +330,7 @@ function enterBook(book) {
   currentSubject = book.subject;
   interaction.setEnabled(false);
   nav.hideHint();
+  catalogEl.classList.add('collapsed');
 
   // Capture controls settings
   const savedMinDist = controls.minDistance;
@@ -318,6 +422,9 @@ function returnToUniverse() {
     // Restore controls
     controls.minDistance = 30;
     controls.maxDistance = 140;
+
+    // Show catalog
+    catalogEl.classList.remove('collapsed');
 
     // Clear interaction
     interaction.setTopicObjects([]);
@@ -498,6 +605,9 @@ function _finishIntro() {
 
   interaction.setEnabled(true);
   nav.showHint('drag to explore · scroll to zoom · click a book to enter', 6000);
+
+  // Show catalog
+  catalogEl.classList.add('visible');
 }
 
 // Safety net: ensure interaction is enabled after max 12s

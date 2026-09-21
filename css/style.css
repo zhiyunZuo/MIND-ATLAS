@@ -235,6 +235,205 @@ html, body {
   letter-spacing: 0.1em;
 }
 
+/* --- Subject Catalog Sidebar --- */
+#catalog {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 220px;
+  height: 100%;
+  z-index: 15;
+  background: linear-gradient(180deg, rgba(8,9,16,0.92) 0%, rgba(5,6,12,0.95) 100%);
+  border-right: 1px solid rgba(201, 168, 76, 0.08);
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 1s ease;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+#catalog.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#catalog.collapsed {
+  transform: translateX(-220px);
+}
+
+.catalog-header {
+  padding: 28px 20px 16px;
+  border-bottom: 1px solid rgba(201, 168, 76, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.catalog-title {
+  font-family: var(--serif-display);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  color: var(--gold-dim);
+}
+
+.catalog-toggle {
+  width: 16px;
+  height: 16px;
+  position: relative;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.catalog-toggle::before,
+.catalog-toggle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 1px;
+  background: var(--gold-dim);
+  transform: translate(-50%, -50%) rotate(45deg);
+  transition: all 0.3s ease;
+}
+
+.catalog-toggle::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+#catalog.collapsed .catalog-toggle::before {
+  width: 8px;
+  transform: translate(-50%, -50%) rotate(0deg);
+}
+
+#catalog.collapsed .catalog-toggle::after {
+  width: 8px;
+  transform: translate(-50%, -50%) rotate(0deg);
+  margin-top: 2px;
+  top: calc(50% - 2px);
+}
+
+.catalog-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+.catalog-list::-webkit-scrollbar { width: 2px; }
+.catalog-list::-webkit-scrollbar-track { background: transparent; }
+.catalog-list::-webkit-scrollbar-thumb { background: rgba(201, 168, 76, 0.15); }
+
+.catalog-item {
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  pointer-events: auto;
+  border-left: 2px solid transparent;
+}
+
+.catalog-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 0;
+  height: 1px;
+  background: var(--gold);
+  transition: width 0.3s ease;
+  opacity: 0;
+}
+
+.catalog-item:hover {
+  background: rgba(201, 168, 76, 0.04);
+  border-left-color: rgba(201, 168, 76, 0.3);
+}
+
+.catalog-item:hover::before {
+  width: 8px;
+  opacity: 0.6;
+}
+
+.catalog-item.active {
+  background: rgba(201, 168, 76, 0.06);
+  border-left-color: var(--gold);
+}
+
+.catalog-item.active .catalog-item-title {
+  color: var(--gold);
+}
+
+.catalog-item.active::before {
+  width: 10px;
+  opacity: 1;
+}
+
+.catalog-item-title {
+  font-family: var(--serif-display);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  color: var(--ivory-dim);
+  line-height: 1.6;
+  transition: color 0.3s ease;
+}
+
+.catalog-item:hover .catalog-item-title {
+  color: var(--ivory);
+}
+
+.catalog-item-num {
+  font-family: var(--serif-body);
+  font-size: 8px;
+  font-style: italic;
+  color: rgba(154, 149, 138, 0.4);
+  margin-right: 8px;
+}
+
+/* Collapsed catalog tab */
+.catalog-tab {
+  position: fixed;
+  top: 24px;
+  left: 0;
+  width: 28px;
+  height: 48px;
+  background: rgba(8,9,16,0.92);
+  border: 1px solid rgba(201, 168, 76, 0.08);
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  z-index: 14;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  opacity: 0;
+  pointer-events: none;
+}
+
+#catalog.collapsed ~ .catalog-tab {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.catalog-tab::before {
+  content: '';
+  width: 8px;
+  height: 1px;
+  background: var(--gold-dim);
+  box-shadow: 0 3px 0 var(--gold-dim), 0 -3px 0 var(--gold-dim);
+}
+
+.catalog-tab:hover {
+  background: rgba(201, 168, 76, 0.08);
+  border-color: rgba(201, 168, 76, 0.2);
+}
+
 /* --- Navigation Breadcrumb --- */
 #breadcrumb {
   position: fixed;
@@ -512,6 +711,23 @@ html, body {
 
 /* --- Responsive --- */
 @media (max-width: 768px) {
+  #catalog {
+    width: 160px;
+  }
+
+  #catalog.collapsed {
+    transform: translateX(-160px);
+  }
+
+  .catalog-item-title {
+    font-size: 8px;
+    letter-spacing: 0.15em;
+  }
+
+  .catalog-item {
+    padding: 8px 14px;
+  }
+
   .subject-label-inner {
     font-size: 9px;
     letter-spacing: 0.15em;
