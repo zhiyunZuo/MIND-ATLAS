@@ -230,19 +230,49 @@ const catalogToggle = document.getElementById('catalog-toggle');
 const catalogTab = document.getElementById('catalog-tab');
 
 // Build catalog items
-SUBJECTS.forEach((subject, i) => {
-  const item = document.createElement('div');
-  item.className = 'catalog-item';
-  item.dataset.subjectId = subject.id;
-  item.innerHTML = `<span class="catalog-item-num">${String(i + 1).padStart(2, '0')}</span><span class="catalog-item-title">${subject.shortTitle}</span>`;
-  item.addEventListener('click', () => {
-    if (catalogMoving || isTransitioning) return;
-    const book = books.find(b => b.subject.id === subject.id);
-    if (!book) return;
-    focusOnBook(book);
+function populateSubjectCatalog() {
+  catalogList.innerHTML = '';
+  catalogEl.querySelector('.catalog-title').textContent = 'ATLAS INDEX';
+
+  SUBJECTS.forEach((subject, i) => {
+    const item = document.createElement('div');
+    item.className = 'catalog-item';
+    item.dataset.subjectId = subject.id;
+    item.innerHTML = `<span class="catalog-item-num">${String(i + 1).padStart(2, '0')}</span><span class="catalog-item-title">${subject.shortTitle}</span>`;
+    item.addEventListener('click', () => {
+      if (catalogMoving || isTransitioning) return;
+      const book = books.find(b => b.subject.id === subject.id);
+      if (!book) return;
+      focusOnBook(book);
+    });
+    catalogList.appendChild(item);
   });
-  catalogList.appendChild(item);
-});
+}
+
+// Populate catalog with topics for the current subject's Book World
+function populateTopicCatalog(subject) {
+  catalogList.innerHTML = '';
+  catalogEl.querySelector('.catalog-title').textContent = subject.shortTitle;
+
+  subject.topics.forEach((topic, i) => {
+    const item = document.createElement('div');
+    item.className = 'catalog-item catalog-item-topic';
+    item.dataset.topicId = topic.id;
+    item.innerHTML = `<span class="catalog-item-num">${String(i + 1).padStart(2, '0')}</span><span class="catalog-item-title">${topic.title}</span>`;
+    item.addEventListener('click', () => {
+      if (catalogMoving || isTransitioning) return;
+      if (!currentBookWorld) return;
+      const topicObj = currentBookWorld.getTopicObjects().find(obj =>
+        obj.userData.topic && obj.userData.topic.id === topic.id
+      );
+      if (topicObj) focusOnTopic(topicObj);
+    });
+    catalogList.appendChild(item);
+  });
+}
+
+// Initialize with subjects
+populateSubjectCatalog();
 
 catalogToggle.addEventListener('click', () => {
   catalogEl.classList.toggle('collapsed');
@@ -321,6 +351,53 @@ function focusOnBook(book) {
   animateMove();
 }
 
+// Smooth camera move to a topic node (inside Book World)
+function focusOnTopic(topicObj) {
+  if (cameraRig.getState() !== CameraState.BOOK_WORLD) return;
+  if (!controls.enabled) return;
+
+  // Set active catalog item
+  catalogList.querySelectorAll('.catalog-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.topicId === topicObj.userData.topic.id);
+  });
+
+  catalogMoving = true;
+  controls.enabled = false;
+
+  const topicPos = new THREE.Vector3();
+  topicObj.getWorldPosition(topicPos);
+
+  const targetCamPos = new THREE.Vector3(
+    topicPos.x * 0.6,
+    topicPos.y + 0.8,
+    topicPos.z + 5
+  );
+  const startCamPos = camera.position.clone();
+  const startTarget = controls.target.clone();
+  const targetTarget = topicPos.clone();
+
+  let moveTime = 0;
+  const moveDuration = 1.2;
+
+  function animateMove() {
+    moveTime += 1 / 60;
+    const t = Math.min(1, moveTime / moveDuration);
+    const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+    camera.position.lerpVectors(startCamPos, targetCamPos, eased);
+    controls.target.lerpVectors(startTarget, targetTarget, eased);
+    camera.lookAt(controls.target);
+
+    if (t < 1) {
+      requestAnimationFrame(animateMove);
+    } else {
+      controls.enabled = true;
+      catalogMoving = false;
+    }
+  }
+  animateMove();
+}
+
 // --- Enter a book (from universe) ---
 function enterBook(book) {
   if (isTransitioning) return;
@@ -366,6 +443,10 @@ function enterBook(book) {
     // Navigation
     nav.showBreadcrumb(['MIND ATLAS', subject.shortTitle]);
     nav.showBack('RETURN TO ATLAS');
+
+    // Populate topic catalog
+    populateTopicCatalog(subject);
+    catalogEl.classList.remove('collapsed');
 
     isTransitioning = false;
 
@@ -423,7 +504,8 @@ function returnToUniverse() {
     controls.minDistance = 30;
     controls.maxDistance = 140;
 
-    // Show catalog
+    // Show catalog and restore subject list
+    populateSubjectCatalog();
     catalogEl.classList.remove('collapsed');
 
     // Clear interaction
