@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MIND ATLAS — A Knowledge Universe</title>
+  <meta name="description" content="MIND ATLAS — an immersive 3D knowledge universe exploring logic, philosophy, psychology, game theory, and the great ideas of human thought.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="css/style.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <!-- 3D Canvas -->
+  <div id="canvas-container"></div>
+
+  <!-- CSS2D Label Overlay -->
+  <div id="label-container"></div>
+
+  <!-- Loading / Intro Screen -->
+  <div id="loading-screen">
+    <div class="loading-title">MIND ATLAS</div>
+    <div class="loading-subtitle">a knowledge universe</div>
+    <div class="loading-progress">
+      <div class="loading-progress-bar" id="loading-bar"></div>
+    </div>
+    <div class="loading-hint" id="loading-hint">opening the cosmos</div>
+  </div>
+
+  <!-- Navigation Breadcrumb -->
+  <div id="breadcrumb">
+    <div class="breadcrumb-inner" id="breadcrumb-text"></div>
+  </div>
+
+  <!-- Atlas Back Control -->
+  <div id="atlas-control">
+    <button class="atlas-back" id="back-btn">
+      <span class="atlas-back-icon"></span>
+      <span id="back-label">ATLAS</span>
+    </button>
+  </div>
+
+  <!-- Knowledge Page -->
+  <div id="knowledge-page">
+    <div class="kp-book" id="kp-book">
+      <button class="kp-close" id="kp-close" title="Return"></button>
+      <div class="kp-spine"></div>
+      <div class="kp-page kp-page-left" id="kp-left">
+        <div class="kp-concept-title" id="kp-title"></div>
+        <div class="kp-concept-subtitle" id="kp-subtitle"></div>
+        <div class="kp-page-number"></div>
+      </div>
+      <div class="kp-page kp-page-right" id="kp-right">
+        <div class="kp-section">
+          <div class="kp-section-title">Why It Matters</div>
+          <div class="kp-section-body kp-placeholder" id="kp-why"></div>
+        </div>
+        <div class="kp-section">
+          <div class="kp-section-title">Mechanism</div>
+          <div class="kp-section-body kp-placeholder" id="kp-mechanism"></div>
+        </div>
+        <div class="kp-section">
+          <div class="kp-section-title">Example</div>
+          <div class="kp-section-body kp-placeholder" id="kp-example"></div>
+        </div>
+        <div class="kp-section">
+          <div class="kp-section-title">Connection</div>
+          <div class="kp-section-body kp-placeholder" id="kp-connection"></div>
+        </div>
+        <div class="kp-page-number"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interaction Hint -->
+  <div id="interaction-hint">
+    <div class="hint-text" id="hint-text">drag to explore · scroll to zoom · click a book to enter</div>
+  </div>
+
+  <!-- Transition Overlay -->
+  <div id="transition-overlay"></div>
+
+  <!-- Main Module -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
