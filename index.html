@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>MIND ATLAS — A Knowledge Universe</title>
-  <meta name="description" content="MIND ATLAS — an immersive 3D knowledge universe exploring logic, philosophy, psychology, game theory, and the great ideas of human thought.">
+  <title>MIND ATLAS — 心智图谱 · 知识宇宙</title>
+  <meta name="description" content="MIND ATLAS — 一个沉浸式 3D 知识宇宙，探索逻辑、哲学、心理学、博弈论，以及人类思想史上最伟大的观念。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="css/style.css">
@@ -27,21 +27,21 @@
   <!-- Subject Catalog Sidebar -->
   <nav id="catalog">
     <div class="catalog-header">
-      <span class="catalog-title">ATLAS INDEX</span>
-      <button class="catalog-toggle" id="catalog-toggle" title="Toggle catalog"></button>
+      <span class="catalog-title">知识目录</span>
+      <button class="catalog-toggle" id="catalog-toggle" title="折叠目录"></button>
     </div>
     <div class="catalog-list" id="catalog-list"></div>
   </nav>
-  <button class="catalog-tab" id="catalog-tab" title="Open index"></button>
+  <button class="catalog-tab" id="catalog-tab" title="打开目录"></button>
 
   <!-- Loading / Intro Screen -->
   <div id="loading-screen">
     <div class="loading-title">MIND ATLAS</div>
-    <div class="loading-subtitle">a knowledge universe</div>
+    <div class="loading-subtitle">心智图谱 · 知识宇宙</div>
     <div class="loading-progress">
       <div class="loading-progress-bar" id="loading-bar"></div>
     </div>
-    <div class="loading-hint" id="loading-hint">opening the cosmos</div>
+    <div class="loading-hint" id="loading-hint">正在打开宇宙</div>
   </div>
 
   <!-- Navigation Breadcrumb -->
@@ -53,37 +53,24 @@
   <div id="atlas-control">
     <button class="atlas-back" id="back-btn">
       <span class="atlas-back-icon"></span>
-      <span id="back-label">ATLAS</span>
+      <span id="back-label">图谱</span>
     </button>
   </div>
 
   <!-- Knowledge Page -->
   <div id="knowledge-page">
     <div class="kp-book" id="kp-book">
-      <button class="kp-close" id="kp-close" title="Return"></button>
+      <button class="kp-close" id="kp-close" title="返回"></button>
       <div class="kp-spine"></div>
       <div class="kp-page kp-page-left" id="kp-left">
         <div class="kp-concept-title" id="kp-title"></div>
         <div class="kp-concept-subtitle" id="kp-subtitle"></div>
+        <div class="kp-summary" id="kp-summary"></div>
         <div class="kp-page-number"></div>
       </div>
       <div class="kp-page kp-page-right" id="kp-right">
-        <div class="kp-section">
-          <div class="kp-section-title">Why It Matters</div>
-          <div class="kp-section-body kp-placeholder" id="kp-why"></div>
-        </div>
-        <div class="kp-section">
-          <div class="kp-section-title">Mechanism</div>
-          <div class="kp-section-body kp-placeholder" id="kp-mechanism"></div>
-        </div>
-        <div class="kp-section">
-          <div class="kp-section-title">Example</div>
-          <div class="kp-section-body kp-placeholder" id="kp-example"></div>
-        </div>
-        <div class="kp-section">
-          <div class="kp-section-title">Connection</div>
-          <div class="kp-section-body kp-placeholder" id="kp-connection"></div>
-        </div>
+        <div class="kp-sections" id="kp-sections"></div>
+        <div class="kp-related" id="kp-related"></div>
         <div class="kp-page-number"></div>
       </div>
     </div>
@@ -91,7 +78,7 @@
 
   <!-- Interaction Hint -->
   <div id="interaction-hint">
-    <div class="hint-text" id="hint-text">drag to explore · scroll to zoom · click a book to enter</div>
+    <div class="hint-text" id="hint-text">拖动探索 · 滚轮缩放 · 点击书籍进入</div>
   </div>
 
   <!-- Transition Overlay -->

@@ -39,7 +39,7 @@ export class NavigationManager {
   }
 
   showBack(label) {
-    this.backLabel.textContent = label || 'ATLAS';
+    this.backLabel.textContent = label || '图谱';
     this.atlasControl.classList.add('visible');
   }
 

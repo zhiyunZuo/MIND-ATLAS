@@ -611,6 +611,51 @@ html, body {
   letter-spacing: 0.05em;
 }
 
+.kp-summary {
+  font-family: var(--serif-body);
+  font-size: 17px;
+  line-height: 1.85;
+  color: #3a3a3a;
+  padding-top: 6px;
+}
+
+.kp-sections {
+  display: flex;
+  flex-direction: column;
+}
+
+.kp-related {
+  margin-top: 8px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.kp-related-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.kp-related-chip {
+  font-family: var(--serif-body);
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6b5a3a;
+  background: rgba(201, 168, 76, 0.08);
+  border: 1px solid rgba(201, 168, 76, 0.35);
+  border-radius: 14px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: left;
+}
+
+.kp-related-chip:hover {
+  background: rgba(201, 168, 76, 0.18);
+  border-color: var(--gold);
+  color: #4a3d1f;
+}
+
 .kp-placeholder {
   font-family: var(--serif-body);
   font-style: italic;
