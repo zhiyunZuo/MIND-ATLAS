@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>MIND ATLAS — 心智图谱 · 知识宇宙</title>
-  <meta name="description" content="MIND ATLAS — 一个沉浸式 3D 知识宇宙，探索逻辑、哲学、心理学、博弈论，以及人类思想史上最伟大的观念。">
+  <title>MIND ATLAS — 知识宇宙</title>
+  <meta name="description" content="MIND ATLAS — 沉浸式 3D 知识宇宙，探索逻辑、哲学、心理学、博弈论与人类思想精华。">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="css/style.css">
@@ -28,20 +28,20 @@
   <nav id="catalog">
     <div class="catalog-header">
       <span class="catalog-title">知识目录</span>
-      <button class="catalog-toggle" id="catalog-toggle" title="折叠目录"></button>
+      <button class="catalog-toggle" id="catalog-toggle" title="Toggle catalog"></button>
     </div>
     <div class="catalog-list" id="catalog-list"></div>
   </nav>
-  <button class="catalog-tab" id="catalog-tab" title="打开目录"></button>
+  <button class="catalog-tab" id="catalog-tab" title="Open index"></button>
 
   <!-- Loading / Intro Screen -->
   <div id="loading-screen">
     <div class="loading-title">MIND ATLAS</div>
-    <div class="loading-subtitle">心智图谱 · 知识宇宙</div>
+    <div class="loading-subtitle">知识宇宙</div>
     <div class="loading-progress">
       <div class="loading-progress-bar" id="loading-bar"></div>
     </div>
-    <div class="loading-hint" id="loading-hint">正在打开宇宙</div>
+    <div class="loading-hint" id="loading-hint">正在开启宇宙</div>
   </div>
 
   <!-- Navigation Breadcrumb -->
@@ -53,7 +53,7 @@
   <div id="atlas-control">
     <button class="atlas-back" id="back-btn">
       <span class="atlas-back-icon"></span>
-      <span id="back-label">图谱</span>
+      <span id="back-label">知识图谱</span>
     </button>
   </div>
 
@@ -65,12 +65,41 @@
       <div class="kp-page kp-page-left" id="kp-left">
         <div class="kp-concept-title" id="kp-title"></div>
         <div class="kp-concept-subtitle" id="kp-subtitle"></div>
-        <div class="kp-summary" id="kp-summary"></div>
+        <div class="kp-section">
+          <div class="kp-section-title">核心概念</div>
+          <div class="kp-section-body" id="kp-concept"></div>
+        </div>
+        <div class="kp-section">
+          <div class="kp-section-title">为什么重要</div>
+          <div class="kp-section-body" id="kp-why"></div>
+        </div>
+        <div class="kp-section">
+          <div class="kp-section-title">原理机制</div>
+          <div class="kp-section-body" id="kp-mechanism"></div>
+        </div>
         <div class="kp-page-number"></div>
       </div>
       <div class="kp-page kp-page-right" id="kp-right">
-        <div class="kp-sections" id="kp-sections"></div>
-        <div class="kp-related" id="kp-related"></div>
+        <div class="kp-section">
+          <div class="kp-section-title">经典案例</div>
+          <div class="kp-section-body" id="kp-example"></div>
+        </div>
+        <div class="kp-section">
+          <div class="kp-section-title">思维实验</div>
+          <div class="kp-section-body" id="kp-experiment"></div>
+        </div>
+        <div class="kp-section">
+          <div class="kp-section-title">实际应用</div>
+          <div class="kp-section-body" id="kp-application"></div>
+        </div>
+        <div class="kp-section">
+          <div class="kp-section-title">常见误区</div>
+          <div class="kp-section-body" id="kp-mistakes"></div>
+        </div>
+        <div class="kp-section">
+          <div class="kp-section-title">跨学科连接</div>
+          <div class="kp-section-body" id="kp-connection"></div>
+        </div>
         <div class="kp-page-number"></div>
       </div>
     </div>
@@ -78,7 +107,7 @@
 
   <!-- Interaction Hint -->
   <div id="interaction-hint">
-    <div class="hint-text" id="hint-text">拖动探索 · 滚轮缩放 · 点击书籍进入</div>
+    <div class="hint-text" id="hint-text">拖拽探索 · 滚轮缩放 · 点击书籍进入</div>
   </div>
 
   <!-- Transition Overlay -->

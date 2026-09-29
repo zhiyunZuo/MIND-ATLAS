@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 
-import { SUBJECTS, locateTopic } from '../data/atlas-data.js';
+import { SUBJECTS } from '../data/atlas-data.js';
 import { BookModel } from './book.js';
 import { KnowledgeNetwork } from './network.js';
 import { CameraRig, CameraState } from './camera-rig.js';
@@ -219,7 +219,6 @@ let currentTopic = null;
 let isTransitioning = false;
 let activeCatalogBook = null;
 let catalogMoving = false;
-let pendingTopicJump = null; // { subjectId, topicId } 跨领域跳转目标
 
 // ============================================================
 // 9a. CATALOG SIDEBAR
@@ -266,7 +265,7 @@ function populateTopicCatalog(subject) {
       const topicObj = currentBookWorld.getTopicObjects().find(obj =>
         obj.userData.topic && obj.userData.topic.id === topic.id
       );
-      if (topicObj) focusOnTopic(topicObj);
+      if (topicObj && topicObj.userData.topic) enterTopic(topicObj.userData.topic);
     });
     catalogList.appendChild(item);
   });
@@ -400,8 +399,7 @@ function focusOnTopic(topicObj) {
 }
 
 // --- Enter a book (from universe) ---
-// jumpTopicId: 可选，进入世界后自动跳转到指定知识点
-function enterBook(book, jumpTopicId = null) {
+function enterBook(book) {
   if (isTransitioning) return;
   if (cameraRig.getState() !== CameraState.UNIVERSE) return;
 
@@ -443,8 +441,8 @@ function enterBook(book, jumpTopicId = null) {
     interaction.setEnabled(true);
 
     // Navigation
-    nav.showBreadcrumb(['心智图谱', subject.shortTitle]);
-    nav.showBack('返回图谱');
+    nav.showBreadcrumb(['MIND ATLAS', subject.shortTitle]);
+    nav.showBack('返回知识图谱');
 
     // Populate topic catalog
     populateTopicCatalog(subject);
@@ -452,17 +450,8 @@ function enterBook(book, jumpTopicId = null) {
 
     isTransitioning = false;
 
-    // 跨领域跳转：进入世界后自动进入目标知识点
-    if (jumpTopicId) {
-      const targetTopic = subject.topics.find(t => t.id === jumpTopicId);
-      if (targetTopic) {
-        setTimeout(() => { enterTopic(targetTopic); }, 500);
-        return;
-      }
-    }
-
     setTimeout(() => {
-      nav.showHint('点击知识点探索 · 拖动旋转 · 滚轮缩放', 6000);
+      nav.showHint('点击知识点探索 · 拖拽旋转 · 滚轮缩放', 6000);
     }, 800);
   });
 }
@@ -477,8 +466,8 @@ function returnToUniverse() {
   if (knowledgePage.isVisible()) {
     knowledgePage.hide();
     cameraRig.returnToBookWorld(currentBookWorld.getCenter(), () => {
-      nav.showBreadcrumb(['心智图谱', currentSubject.shortTitle]);
-      nav.showBack('返回图谱');
+      nav.showBreadcrumb(['MIND ATLAS', currentSubject.shortTitle]);
+      nav.showBack('返回知识图谱');
       interaction.setEnabled(true);
     });
     return;
@@ -531,19 +520,8 @@ function returnToUniverse() {
     currentTopic = null;
     isTransitioning = false;
 
-    // 处理跨领域跳转：进入目标书籍并自动定位知识点
-    if (pendingTopicJump) {
-      const jump = pendingTopicJump;
-      pendingTopicJump = null;
-      const targetBook = books.find(b => b.subject.id === jump.subjectId);
-      if (targetBook) {
-        setTimeout(() => { enterBook(targetBook, jump.topicId); }, 400);
-        return;
-      }
-    }
-
     setTimeout(() => {
-      nav.showHint('拖动探索 · 滚轮缩放 · 点击书籍进入', 5000);
+      nav.showHint('拖拽探索 · 滚轮缩放 · 点击书籍进入', 5000);
     }, 500);
   });
 }
@@ -569,8 +547,8 @@ function enterTopic(topic) {
     cameraRig.approachTopic(pos, () => {
       // Show knowledge page
       knowledgePage.show(topic, currentSubject);
-      nav.showBreadcrumb(['心智图谱', currentSubject.shortTitle, topic.title]);
-      nav.showBack('返回 ' + currentSubject.shortTitle);
+      nav.showBreadcrumb(['MIND ATLAS', currentSubject.shortTitle, topic.title]);
+      nav.showBack('返回到 ' + currentSubject.shortTitle);
       isTransitioning = false;
     });
   } else {
@@ -588,31 +566,12 @@ function returnToBookWorld() {
     isTransitioning = true;
 
     cameraRig.returnToBookWorld(currentBookWorld.getCenter(), () => {
-      nav.showBreadcrumb(['心智图谱', currentSubject.shortTitle]);
-      nav.showBack('返回图谱');
+      nav.showBreadcrumb(['MIND ATLAS', currentSubject.shortTitle]);
+      nav.showBack('返回知识图谱');
       interaction.setEnabled(true);
       isTransitioning = false;
     });
   }
-}
-
-// --- 跨领域跳转：点击「跨学科连接」链接 ---
-function jumpToTopic(topicId) {
-  const located = locateTopic(topicId);
-  if (!located) return;
-  const { subject: targetSubject, topic: targetTopic } = located;
-
-  // 同领域：直接进入目标知识点
-  if (currentSubject && targetSubject.id === currentSubject.id) {
-    knowledgePage.hide();
-    enterTopic(targetTopic);
-    return;
-  }
-
-  // 跨领域：先返回宇宙，再进入目标书籍并跳转
-  if (knowledgePage.isVisible()) knowledgePage.hide();
-  pendingTopicJump = { subjectId: targetSubject.id, topicId: targetTopic.id };
-  returnToUniverse();
 }
 
 // ============================================================
@@ -638,10 +597,6 @@ nav.onBack = () => {
 
 knowledgePage.onClose = () => {
   returnToBookWorld();
-};
-
-knowledgePage.onRelatedClick = (topicId) => {
-  jumpToTopic(topicId);
 };
 
 // ============================================================
@@ -731,7 +686,7 @@ function _finishIntro() {
   controls.update();
 
   interaction.setEnabled(true);
-  nav.showHint('拖动探索 · 滚轮缩放 · 点击书籍进入', 6000);
+  nav.showHint('拖拽探索 · 滚轮缩放 · 点击书籍进入', 6000);
 
   // Show catalog
   catalogEl.classList.add('visible');
@@ -761,10 +716,10 @@ function startApp() {
 
   let progress = 0;
   const stages = [
-    { pct: 25, text: '构建知识宇宙' },
+    { pct: 25, text: '构建宇宙' },
     { pct: 50, text: '锻造知识之书' },
-    { pct: 75, text: '编织连接网络' },
-    { pct: 100, text: '进入心智图谱' }
+    { pct: 75, text: '编织关联' },
+    { pct: 100, text: '进入知识图谱' }
   ];
 
   let stageIdx = 0;
