@@ -22,6 +22,7 @@ dbg*.mjs
 package.json
 package-lock.json
 push_to_github.py
+push_verify.py
 start-server.bat
 optimize_images.py
 preview.bat
