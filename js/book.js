@@ -4,8 +4,8 @@
 // floating paper pieces, page-flutter animation
 // ============================================================
 
-import * as THREE from 'three';
-import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import * as THREE from '../vendor/three/three.module.js';
+import { CSS2DObject } from '../vendor/three/addons/renderers/CSS2DRenderer.js';
 
 export class BookModel {
   constructor(subject, textureCache) {

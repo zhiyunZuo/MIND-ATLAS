@@ -5,3 +5,28 @@ dist/
 .DS_Store
 Thumbs.db
 *.log
+
+# --- 本地临时 / 调试产物 ---
+_shot*.png
+_api_body.json
+*.tmp
+_topic_content*.json
+_pilots*.json
+_*.bat
+_*.mjs
+
+# --- 开发 / 测试脚本（非站点运行所需）---
+test_*.mjs
+browser_test.mjs
+dbg*.mjs
+package.json
+package-lock.json
+push_to_github.py
+start-server.bat
+optimize_images.py
+preview.bat
+
+# --- 内部 / 未接线的备用数据（推送时排除，避免改动远端既有内容）---
+.workbuddy/
+data/knowledge/
+data/diagrams.js

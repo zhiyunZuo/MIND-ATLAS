@@ -3,13 +3,14 @@
 // Per-subject 3D space with topic nodes, ambient elements
 // ============================================================
 
-import * as THREE from 'three';
-import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import * as THREE from '../vendor/three/three.module.js';
+import { CSS2DObject } from '../vendor/three/addons/renderers/CSS2DRenderer.js';
 
 export class BookWorld {
-  constructor(subject, labelContainer) {
+  constructor(subject, labelContainer, onTopicOpen = null) {
     this.subject = subject;
     this.labelContainer = labelContainer;
+    this.onTopicOpen = onTopicOpen;
     this.group = new THREE.Group();
     this.topicObjects = [];
     this.ambientPoints = null;
@@ -207,18 +208,31 @@ export class BookWorld {
       node.userData.topic = topic;
       node.userData.subjectId = this.subject.id;
 
-      // Label
+      // Label（可直接点击打开，不依赖 3D 射线）
       const div = document.createElement('div');
       div.className = 'topic-label';
+      div.style.pointerEvents = 'auto';
+      div.style.cursor = 'pointer';
       const inner = document.createElement('div');
       inner.className = 'topic-label-inner';
       inner.textContent = topic.title;
       div.appendChild(inner);
+      div.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.onTopicOpen) this.onTopicOpen(topic);
+      });
 
       const label = new CSS2DObject(div);
       label.position.set(0, 0.4, 0);
       node.add(label);
       node.userData.labelEl = div;
+
+      // 不可见的大碰撞球，放大射线命中范围（节点自身 mesh 很小）
+      const hit = new THREE.Mesh(
+        new THREE.SphereGeometry(0.45, 8, 8),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })
+      );
+      node.add(hit);
 
       this.topicObjects.push(node);
       this.group.add(node);

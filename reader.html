@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MIND ATLAS — 阅读（免 3D）</title>
+  <meta name="description" content="MIND ATLAS 纯阅读模式：直接翻阅知识书页，不加载 3D 场景。">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%236878c0'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="reader-body">
+
+  <!-- 顶部：知识点导航（不依赖 3D） -->
+  <header id="rd-bar">
+    <div class="rd-brand">
+      <span class="rd-brand-mark">◈</span>
+      <span class="rd-brand-text">MIND ATLAS</span>
+    </div>
+
+    <div class="rd-pick">
+      <select id="rd-subject" class="rd-select" aria-label="学科"></select>
+      <select id="rd-topic" class="rd-select rd-select-topic" aria-label="知识点"></select>
+    </div>
+
+    <div class="rd-nav">
+      <button class="rd-btn" id="rd-prev-topic" title="上一个知识点">‹ 上一条</button>
+      <button class="rd-btn" id="rd-next-topic" title="下一个知识点">下一条 ›</button>
+      <a class="rd-btn rd-btn-ghost" href="index.html" title="回到 3D 知识宇宙">3D 宇宙</a>
+    </div>
+  </header>
+
+  <!-- 知识点索引（关闭书页后显示） -->
+  <section id="rd-index">
+    <div class="rd-index-inner">
+      <div class="rd-index-head">
+        <h1>知识图谱 · 阅读索引</h1>
+        <p>共 <b id="rd-index-count">0</b> 个知识点。带 ◆ 的表示配有专属插画。</p>
+      </div>
+      <div id="rd-index-list"></div>
+    </div>
+  </section>
+
+  <!-- 知识页（与 3D 版完全相同的书页结构与样式） -->
+  <div id="knowledge-page">
+    <div class="kp-book" id="kp-book">
+      <button class="kp-close" id="kp-close" title="返回索引"></button>
+      <div class="kp-spread" id="kp-spread">
+        <div class="kp-side kp-left" id="kp-left"></div>
+        <div class="kp-side kp-right" id="kp-right"></div>
+      </div>
+      <div class="kp-corner kp-corner-next" id="kp-corner-next" role="button" tabindex="-1" aria-label="翻到下一页" title="翻页">
+        <span class="kp-corner-curl"></span>
+      </div>
+      <div class="kp-corner kp-corner-prev" id="kp-corner-prev" role="button" tabindex="-1" aria-label="翻到上一页" title="上一页">
+        <span class="kp-corner-curl"></span>
+      </div>
+      <div class="kp-measure" id="kp-measure" aria-hidden="true"></div>
+    </div>
+  </div>
+
+  <div id="rd-toast"></div>
+
+  <script type="module">
+    import { SUBJECTS, getTopic } from './data/atlas-data.js';
+    import { TOPIC_IMAGES } from './data/topic-images.js';
+    import { KnowledgePage } from './js/knowledge-page.js';
+
+    const kp = new KnowledgePage();
+    const $ = (id) => document.getElementById(id);
+    const subjectSel = $('rd-subject'), topicSel = $('rd-topic');
+    const indexPane = $('rd-index');
+    const toastEl = $('rd-toast');
+
+    let curSub = SUBJECTS[0], curTopic = null;
+    let flat = [];
+
+    function toast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      clearTimeout(toast._t);
+      toast._t = setTimeout(() => toastEl.classList.remove('show'), 2200);
+    }
+
+    // ------- 构建索引（含导航用的扁平列表）-------
+    function buildIndex() {
+      flat = [];
+      const frag = document.createDocumentFragment();
+      for (const s of SUBJECTS) {
+        const sec = document.createElement('section');
+        sec.className = 'rd-group';
+        const h = document.createElement('h2');
+        h.className = 'rd-group-title';
+        h.textContent = s.title;
+        sec.appendChild(h);
+
+        const ul = document.createElement('div');
+        ul.className = 'rd-chips';
+        for (const t of s.topics) {
+          flat.push({ s, t });
+          const b = document.createElement('button');
+          b.className = 'rd-chip';
+          const hasImg = !!TOPIC_IMAGES[`${s.id}/${t.id}`];
+          b.innerHTML = (hasImg ? '<i>◆</i>' : '') + `<span>${t.title}</span>`;
+          b.addEventListener('click', () => open(s.id, t.id, true));
+          ul.appendChild(b);
+        }
+        sec.appendChild(ul);
+        frag.appendChild(sec);
+      }
+      const box = $('rd-index-list');
+      box.textContent = '';
+      box.appendChild(frag);
+      $('rd-index-count').textContent = flat.length;
+    }
+
+    // ------- 下拉导航 -------
+    function buildSelects() {
+      subjectSel.innerHTML = SUBJECTS
+        .map(s => `<option value="${s.id}">${s.title}</option>`).join('');
+      subjectSel.addEventListener('change', () => {
+        fillTopics(subjectSel.value);
+        const s = SUBJECTS.find(x => x.id === subjectSel.value);
+        if (s && s.topics[0]) open(s.id, s.topics[0].id, true);
+      });
+      topicSel.addEventListener('change', () => open(subjectSel.value, topicSel.value, true));
+    }
+
+    function fillTopics(sid, keepTid) {
+      const s = SUBJECTS.find(x => x.id === sid);
+      if (!s) return;
+      topicSel.innerHTML = s.topics
+        .map(t => {
+          const hasImg = TOPIC_IMAGES[`${sid}/${t.id}`] ? ' ◆' : '';
+          return `<option value="${t.id}">${t.title}${hasImg}</option>`;
+        }).join('');
+      if (keepTid) topicSel.value = keepTid;
+    }
+
+    // ------- 打开某个知识点 -------
+    function open(sid, tid, pushHash) {
+      const s = SUBJECTS.find(x => x.id === sid);
+      if (!s) return;
+      const t = s.topics.find(x => x.id === tid);
+      if (!t) return;
+      curSub = s; curTopic = t;
+
+      // 同步下拉 & 索引高亮
+      if (subjectSel.value !== sid) { subjectSel.value = sid; }
+      fillTopics(sid, tid);
+      topicSel.value = tid;
+
+      indexPane.classList.remove('show');
+      kp.show(t, s);
+      document.title = `${t.title} · ${s.title} — MIND ATLAS`;
+
+      if (pushHash) {
+        const h = `#topic=${sid}/${tid}`;
+        if (location.hash !== h) history.replaceState(null, '', h);
+      }
+      updateNavButtons();
+    }
+
+    function updateNavButtons() {
+      const i = flat.findIndex(x => x.s.id === curSub.id && x.t.id === (curTopic && curTopic.id));
+      $('rd-prev-topic').disabled = i <= 0;
+      $('rd-next-topic').disabled = i < 0 || i >= flat.length - 1;
+    }
+
+    function stepTopic(d) {
+      const i = flat.findIndex(x => x.s.id === curSub.id && x.t.id === (curTopic && curTopic.id));
+      const n = flat[i + d];
+      if (n) open(n.s.id, n.t.id, true);
+    }
+
+    // 关闭书页 → 回到索引
+    kp.onClose = () => {
+      kp.hide();
+      indexPane.classList.add('show');
+      document.title = 'MIND ATLAS — 阅读（免 3D）';
+    };
+
+    $('rd-prev-topic').addEventListener('click', () => stepTopic(-1));
+    $('rd-next-topic').addEventListener('click', () => stepTopic(1));
+
+    // 键盘：← → 换知识点（书页翻页由 knowledge-page 自己接管，这里用 Shift 修饰避免冲突）
+    window.addEventListener('keydown', (e) => {
+      if (!kp.isVisible()) return;
+      if (e.shiftKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+        e.preventDefault();
+        stepTopic(e.key === 'ArrowRight' ? 1 : -1);
+      }
+    });
+
+    // ------- 启动 -------
+    buildSelects();
+    buildIndex();
+    fillTopics(SUBJECTS[0].id);
+    window.__reader = { kp, open, SUBJECTS };
+
+    const m = location.hash.match(/topic=([^/]+)\/([^&]+)/);
+    if (m) {
+      const sid = decodeURIComponent(m[1]), tid = decodeURIComponent(m[2]);
+      const s = SUBJECTS.find(x => x.id === sid);
+      if (s && s.topics.some(x => x.id === tid)) {
+        open(sid, tid, false);
+      } else {
+        indexPane.classList.add('show');
+        toast(`未找到知识点：${sid}/${tid}`);
+      }
+    } else {
+      indexPane.classList.add('show');
+    }
+
+    window.addEventListener('hashchange', () => {
+      const mm = location.hash.match(/topic=([^/]+)\/([^&]+)/);
+      if (mm) open(decodeURIComponent(mm[1]), decodeURIComponent(mm[2]), false);
+    });
+  </script>
+</body>
+</html>
