@@ -4,8 +4,8 @@
 // floating paper pieces, page-flutter animation
 // ============================================================
 
-import * as THREE from '../vendor/three/three.module.js';
-import { CSS2DObject } from '../vendor/three/addons/renderers/CSS2DRenderer.js';
+import * as THREE from 'three';
+import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
 export class BookModel {
   constructor(subject, textureCache) {
@@ -17,6 +17,8 @@ export class BookModel {
 
     this.isOpen = false;
     this.openProgress = 0;
+    this._lastOpenProgress = 0;
+    this._pageStir = 0;
     this.hoverIntensity = 0;
     this.targetHover = 0;
     this.dimAmount = 0;
@@ -223,22 +225,10 @@ export class BookModel {
   }
 
   _buildWarmLight() {
+    // 仅保留不可见的暖光点光源，为翻开的书页提供温暖照明
     this.warmLight = new THREE.PointLight(0xd4a868, 0, 3, 2);
     this.warmLight.position.set(0, 0, 0);
     this.group.add(this.warmLight);
-
-    const glowGeo = new THREE.PlaneGeometry(this.W * 0.8, this.H * 0.8);
-    const glowMat = new THREE.MeshBasicMaterial({
-      color: 0xd4a868,
-      transparent: true,
-      opacity: 0,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
-    this.pageGlow = new THREE.Mesh(glowGeo, glowMat);
-    this.pageGlow.rotation.x = -Math.PI / 2;
-    this.pageGlow.position.y = this.H / 2;
-    this.group.add(this.pageGlow);
   }
 
   _buildBookmark() {
@@ -547,20 +537,29 @@ export class BookModel {
 
   open(progress) {
     this.openProgress = Math.max(0, Math.min(1, progress));
-    const easedOpen = _easeOutCubic(this.openProgress);
-    this.coverPivot.rotation.z = -easedOpen * 2.3;
+    // 封面从上方掀起：绕书脊正角度旋转，越过书顶后平放展开（约180°），
+    // 末端带轻微回弹，模拟真实封面落定的重量感
+    const easedOpen = _easeOutBackSoft(this.openProgress);
+    this.coverPivot.rotation.z = easedOpen * Math.PI;
+
+    // 记录翻动速度，驱动书页随封面扇起的气流轻微翻腾
+    const dp = this.openProgress - this._lastOpenProgress;
+    if (dp !== 0) {
+      this._pageStir = Math.min(1, this._pageStir + Math.abs(dp) * 6);
+    }
+    this._lastOpenProgress = this.openProgress;
 
     this.warmLight.intensity = this.openProgress * 0.6;
-    this.pageGlow.material.opacity = this.openProgress * 0.15;
 
     this.isOpen = this.openProgress > 0.5;
   }
 
   close() {
     this.openProgress = 0;
+    this._lastOpenProgress = 0;
+    this._pageStir = 0;
     this.coverPivot.rotation.z = 0;
     this.warmLight.intensity = 0;
-    this.pageGlow.material.opacity = 0;
     this.isOpen = false;
   }
 
@@ -612,15 +611,24 @@ export class BookModel {
     }
 
     // Page flutter: top few pages wave slightly
-    const flutterCount = Math.min(4, this.pageMeshes.length);
+    // 封面翻动时扇起气流，页面随之短暂翻腾后平息
+    if (this._pageStir > 0.001) {
+      this._pageStir *= 0.9;
+    } else {
+      this._pageStir = 0;
+    }
+    const stir = this._pageStir;
+    const flutterCount = Math.min(5, this.pageMeshes.length);
     for (let i = 0; i < flutterCount; i++) {
       const pm = this.pageMeshes[this.pageMeshes.length - 1 - i];
-      const flutterY = Math.sin(time * 0.8 + i * 0.5) * 0.003 * (i + 1) * 0.5;
-      const flutterZ = Math.cos(time * 0.6 + i * 0.7) * 0.004 * (i + 1) * 0.3;
+      const w = i + 1;
+      const stirWave = Math.sin(time * 7 + i * 1.1) * stir * w;
+      const flutterY = Math.sin(time * 0.8 + i * 0.5) * 0.003 * w * 0.5 + stirWave * 0.008;
+      const flutterZ = Math.cos(time * 0.6 + i * 0.7) * 0.004 * w * 0.3;
       pm.position.y = pm.userData.baseY + flutterY;
       pm.position.z = flutterZ;
       // Slight rotation for paper bending
-      pm.rotation.z = Math.sin(time * 0.5 + i) * 0.003 * (i + 1);
+      pm.rotation.z = Math.sin(time * 0.5 + i) * 0.003 * w + stirWave * 0.015;
     }
 
     // Bookmark gentle sway
@@ -704,4 +712,11 @@ function _seededRng(seed) {
 
 function _easeOutCubic(t) {
   return 1 - Math.pow(1 - t, 3);
+}
+
+// 轻微回弹的缓出：封面越过平放位置少许后落定，模拟纸板封面的惯性
+function _easeOutBackSoft(t) {
+  const c1 = 1.2;
+  const c3 = c1 + 1;
+  return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
 }

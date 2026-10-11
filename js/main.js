@@ -4,9 +4,9 @@
 // book worlds, navigation, knowledge pages, render loop
 // ============================================================
 
-import * as THREE from '../vendor/three/three.module.js';
-import { OrbitControls } from '../vendor/three/addons/controls/OrbitControls.js';
-import { CSS2DRenderer } from '../vendor/three/addons/renderers/CSS2DRenderer.js';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 
 import { SUBJECTS } from '../data/atlas-data.js';
 import { BookModel } from './book.js';
@@ -422,9 +422,7 @@ function enterBook(book) {
     glows.visible = false;
 
     // Create and show book world
-    currentBookWorld = new BookWorld(subject, document.getElementById('label-container'), (topic) => {
-      if (!isTransitioning && cameraRig.getState() === 'book_world') enterTopic(topic);
-    });
+    currentBookWorld = new BookWorld(subject, document.getElementById('label-container'));
     scene.add(currentBookWorld.group);
 
     // Adjust fog for book world
@@ -563,19 +561,17 @@ function enterTopic(topic) {
 function returnToBookWorld() {
   if (isTransitioning) return;
 
-  // 说明：关闭按钮(X) / Esc 关闭知识页时，knowledge-page.js 会先移除
-  // 'visible' 类再触发 onClose，因此这里不能依赖 isVisible() 判断是否需要回退。
-  // 本函数只在点开知识点后的"退出"场景被调用（X 关闭、Esc、返回按钮），
-  // 直接执行隐藏 + 相机回退 + 恢复交互即可。
-  knowledgePage.hide();
-  isTransitioning = true;
+  if (knowledgePage.isVisible()) {
+    knowledgePage.hide();
+    isTransitioning = true;
 
-  cameraRig.returnToBookWorld(currentBookWorld.getCenter(), () => {
-    nav.showBreadcrumb(['MIND ATLAS', currentSubject.shortTitle]);
-    nav.showBack('返回知识图谱');
-    interaction.setEnabled(true);
-    isTransitioning = false;
-  });
+    cameraRig.returnToBookWorld(currentBookWorld.getCenter(), () => {
+      nav.showBreadcrumb(['MIND ATLAS', currentSubject.shortTitle]);
+      nav.showBack('返回知识图谱');
+      interaction.setEnabled(true);
+      isTransitioning = false;
+    });
+  }
 }
 
 // ============================================================
@@ -615,9 +611,6 @@ window.__mindAtlas = {
   controls,
   scene,
   enterBook,
-  enterTopic,
-  knowledgePage,
-  getBookWorld: () => currentBookWorld,
   returnToUniverse,
   getState: () => ({
     isTransitioning,
@@ -832,36 +825,3 @@ window.addEventListener('resize', () => {
 
 animate();
 startApp();
-
-// ============================================================
-// 16. URL 直达：#topic=<subjectId>/<topicId>
-//     例： http://127.0.0.1:8123/#topic=cognitive-science/attention
-//     用于直接跳到某个知识点（尤其方便查看带插画的跨页图版）。
-//     优先走完整的「进书 → 点知识点」路径；若 3D 过渡迟迟没就绪，
-//     则降级为直接打开知识页，保证链接一定能用。
-// ============================================================
-
-(function deepLink() {
-  const m = /^#topic=([A-Za-z0-9_-]+)\/([A-Za-z0-9_-]+)$/.exec(decodeURIComponent(location.hash || ''));
-  if (!m) return;
-  const [, sid, tid] = m;
-
-  const subject = SUBJECTS.find(s => s.id === sid);
-  const topic = subject && subject.topics.find(t => t.id === tid);
-  if (!subject || !topic) {
-    console.warn('[deep-link] 未找到知识点:', sid, '/', tid);
-    return;
-  }
-
-  // 等首屏遮罩消失再打开，免得被 loading 盖住；
-  // 直接开知识页而不走 3D 入场，是为了保证链接在任何机器上都能用。
-  let waited = 0;
-  const timer = setInterval(() => {
-    waited += 100;
-    const hidden = document.getElementById('loading-screen')?.classList.contains('hidden');
-    if (hidden || waited > 30000) {
-      clearInterval(timer);
-      knowledgePage.show(topic, subject);
-    }
-  }, 100);
-})();

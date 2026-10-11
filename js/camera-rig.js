@@ -3,7 +3,7 @@
 // Multi-stage camera transitions: approach → focus → open → dive → book world
 // ============================================================
 
-import * as THREE from '../vendor/three/three.module.js';
+import * as THREE from 'three';
 import { Easing } from './utils.js';
 
 const STATE = {

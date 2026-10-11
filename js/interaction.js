@@ -3,7 +3,7 @@
 // Raycasting hover, click selection, touch support
 // ============================================================
 
-import * as THREE from '../vendor/three/three.module.js';
+import * as THREE from 'three';
 
 export class InteractionManager {
   constructor(camera, domElement, books, network) {

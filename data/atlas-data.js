@@ -8,7 +8,6 @@ import { SUBJECTS_ZH_1 } from './subjects-zh-1.js';
 import { SUBJECTS_ZH_2 } from './subjects-zh-2.js';
 import { SUBJECTS_ZH_3 } from './subjects-zh-3.js';
 import { SUBJECTS_ZH_4 } from './subjects-zh-4.js';
-import { DIAGRAM_OVERLAY } from './subjects-diagrams.js';
 
 // --- 3D position generator (Fibonacci sphere with depth variation) ---
 function _pos(angle, dist, height, zOffset = 0) {
@@ -613,20 +612,14 @@ export function getTopic(subjectId, topicId) {
 export function getTopicContent(subjectId, topicId) {
   const topic = getTopic(subjectId, topicId);
   if (!topic) return null;
-  // 非侵入式图解补全层：为部分学科的知识点叠加扉页导语 + 程序化图解
-  const ov = (DIAGRAM_OVERLAY[subjectId] && DIAGRAM_OVERLAY[subjectId][topicId]) || {};
   return {
-    lead: topic.lead || ov.lead || '',
     concept: topic.concept || '',
     whyItMatters: topic.whyItMatters || '',
     mechanism: topic.mechanism || '',
     example: topic.example || '',
     experiment: topic.experiment || '',
     application: topic.application || '',
-    practice: topic.practice || '',
     commonMistakes: topic.commonMistakes || '',
-    connection: topic.connection || '',
-    sources: topic.sources || '',
-    visual: ov.visualExplanation || null
+    connection: topic.connection || ''
   };
 }
