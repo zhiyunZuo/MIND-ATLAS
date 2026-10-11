@@ -5,17 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>MIND ATLAS — 知识宇宙</title>
   <meta name="description" content="MIND ATLAS — 沉浸式 3D 知识宇宙，探索逻辑、哲学、心理学、博弈论与人类思想精华。">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%236878c0'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css">
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
-    }
-  }
-  </script>
 </head>
 <body>
   <!-- 3D Canvas -->
@@ -61,47 +52,19 @@
   <div id="knowledge-page">
     <div class="kp-book" id="kp-book">
       <button class="kp-close" id="kp-close" title="返回"></button>
-      <div class="kp-spine"></div>
-      <div class="kp-page kp-page-left" id="kp-left">
-        <div class="kp-concept-title" id="kp-title"></div>
-        <div class="kp-concept-subtitle" id="kp-subtitle"></div>
-        <div class="kp-section">
-          <div class="kp-section-title">核心概念</div>
-          <div class="kp-section-body" id="kp-concept"></div>
-        </div>
-        <div class="kp-section">
-          <div class="kp-section-title">为什么重要</div>
-          <div class="kp-section-body" id="kp-why"></div>
-        </div>
-        <div class="kp-section">
-          <div class="kp-section-title">原理机制</div>
-          <div class="kp-section-body" id="kp-mechanism"></div>
-        </div>
-        <div class="kp-page-number"></div>
+      <div class="kp-spread" id="kp-spread">
+        <div class="kp-side kp-left" id="kp-left"></div>
+        <div class="kp-side kp-right" id="kp-right"></div>
       </div>
-      <div class="kp-page kp-page-right" id="kp-right">
-        <div class="kp-section">
-          <div class="kp-section-title">经典案例</div>
-          <div class="kp-section-body" id="kp-example"></div>
-        </div>
-        <div class="kp-section">
-          <div class="kp-section-title">思维实验</div>
-          <div class="kp-section-body" id="kp-experiment"></div>
-        </div>
-        <div class="kp-section">
-          <div class="kp-section-title">实际应用</div>
-          <div class="kp-section-body" id="kp-application"></div>
-        </div>
-        <div class="kp-section">
-          <div class="kp-section-title">常见误区</div>
-          <div class="kp-section-body" id="kp-mistakes"></div>
-        </div>
-        <div class="kp-section">
-          <div class="kp-section-title">跨学科连接</div>
-          <div class="kp-section-body" id="kp-connection"></div>
-        </div>
-        <div class="kp-page-number"></div>
+      <!-- 纸角翻页：右页外下角＝下一页；左页外下角＝上一页（克制、像书页自然卷起的一角） -->
+      <div class="kp-corner kp-corner-next" id="kp-corner-next" role="button" tabindex="-1" aria-label="翻到下一页" title="翻页">
+        <span class="kp-corner-curl"></span>
       </div>
+      <div class="kp-corner kp-corner-prev" id="kp-corner-prev" role="button" tabindex="-1" aria-label="翻到上一页" title="上一页">
+        <span class="kp-corner-curl"></span>
+      </div>
+      <!-- 隐藏测量层：以真实页宽测量内容高度，用于按高度分页 -->
+      <div class="kp-measure" id="kp-measure" aria-hidden="true"></div>
     </div>
   </div>
 

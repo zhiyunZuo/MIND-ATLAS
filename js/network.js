@@ -3,7 +3,7 @@
 // Thin connection lines + slow flowing light particles
 // ============================================================
 
-import * as THREE from 'three';
+import * as THREE from '../vendor/three/three.module.js';
 
 export class KnowledgeNetwork {
   constructor(subjects, scene) {
