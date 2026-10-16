@@ -63,9 +63,7 @@ export class BookModel {
 
     this._time = 0;
 
-    // Cover-sweep air gust state
-    this._gust = 0;
-    this._lastOpenProgress = 0;
+    // Direction of the last open() call: used to pick easing
     this._closing = false;
   }
 
@@ -557,9 +555,7 @@ export class BookModel {
 
   close() {
     this.openProgress = 0;
-    this._lastOpenProgress = 0;
     this._closing = false;
-    this._gust = 0;
     this.coverPivot.rotation.z = 0;
     this.warmLight.intensity = 0;
     this.isOpen = false;
@@ -576,16 +572,6 @@ export class BookModel {
       this.label.visible = this.group.visible;
     }
     if (!this.group.visible) return;
-
-    // Cover-driven air gust: strongest while the cover sweeps
-    // through half-open, decays after the motion stops
-    const dp = this.openProgress - this._lastOpenProgress;
-    this._lastOpenProgress = this.openProgress;
-    const coverRate = Math.abs(dp) / Math.max(dt, 1e-4);
-    const coverMotion = Math.min(1, coverRate / 0.6);
-    const gustEnvelope = Math.sin(Math.PI * this.openProgress);
-    const gustTarget = coverMotion * gustEnvelope;
-    this._gust += (gustTarget - this._gust) * Math.min(1, dt * 8);
 
     // Floating animation
     const floatY = Math.sin(time * this._floatSpeed + this._floatPhase) * this._floatAmp;
@@ -631,15 +617,9 @@ export class BookModel {
       const flutterY = Math.sin(time * 0.8 + i * 0.5) * 0.003 * (i + 1) * 0.5;
       const flutterZ = Math.cos(time * 0.6 + i * 0.7) * 0.004 * (i + 1) * 0.3;
 
-      // Gust ripple travels through the stack from top page downward
-      const gustPhase = this._time * 9 - i * 0.9;
-      const gustWave = Math.max(0, Math.sin(gustPhase));
-      const gustLift = this._gust * gustWave * (0.05 - depth * 0.035);
-      const gustFan = this._gust * Math.sin(gustPhase * 0.8) * 0.05 * (1 - depth * 0.7);
-
-      pm.position.y = pm.userData.baseY + flutterY + gustLift;
+      pm.position.y = pm.userData.baseY + flutterY;
       pm.position.z = flutterZ;
-      pm.rotation.x = gustFan;
+      pm.rotation.x = 0;
       // Slight rotation for paper bending
       pm.rotation.z = Math.sin(time * 0.5 + i) * 0.003 * (i + 1);
     }
