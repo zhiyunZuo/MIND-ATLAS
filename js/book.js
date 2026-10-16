@@ -62,6 +62,11 @@ export class BookModel {
     this._rotSpeed = f.rotSpeed;
 
     this._time = 0;
+
+    // Cover-sweep air gust state
+    this._gust = 0;
+    this._lastOpenProgress = 0;
+    this._closing = false;
   }
 
   // --- Layered page stack with visible edges on three sides ---
@@ -226,19 +231,6 @@ export class BookModel {
     this.warmLight = new THREE.PointLight(0xd4a868, 0, 3, 2);
     this.warmLight.position.set(0, 0, 0);
     this.group.add(this.warmLight);
-
-    const glowGeo = new THREE.PlaneGeometry(this.W * 0.8, this.H * 0.8);
-    const glowMat = new THREE.MeshBasicMaterial({
-      color: 0xd4a868,
-      transparent: true,
-      opacity: 0,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
-    this.pageGlow = new THREE.Mesh(glowGeo, glowMat);
-    this.pageGlow.rotation.x = -Math.PI / 2;
-    this.pageGlow.position.y = this.H / 2;
-    this.group.add(this.pageGlow);
   }
 
   _buildBookmark() {
@@ -546,21 +538,30 @@ export class BookModel {
   }
 
   open(progress) {
-    this.openProgress = Math.max(0, Math.min(1, progress));
-    const easedOpen = _easeOutCubic(this.openProgress);
-    this.coverPivot.rotation.z = -easedOpen * 2.3;
+    const p = Math.max(0, Math.min(1, progress));
+    // Direction-aware easing: soft settle while lifting open,
+    // plain smooth motion while closing back down
+    this._closing = p < this.openProgress - 1e-4;
+    this.openProgress = p;
 
-    this.warmLight.intensity = this.openProgress * 0.6;
-    this.pageGlow.material.opacity = this.openProgress * 0.15;
+    const easedAngle = this._closing
+      ? _easeInOutCubic(p)
+      : _easeOutBackSoft(p);
+    // Positive Z rotation lifts the cover UP around the spine;
+    // PI folds it completely flat on the other side, like a real book
+    this.coverPivot.rotation.z = easedAngle * Math.PI;
 
-    this.isOpen = this.openProgress > 0.5;
+    this.warmLight.intensity = p * 0.6;
+    this.isOpen = p > 0.5;
   }
 
   close() {
     this.openProgress = 0;
+    this._lastOpenProgress = 0;
+    this._closing = false;
+    this._gust = 0;
     this.coverPivot.rotation.z = 0;
     this.warmLight.intensity = 0;
-    this.pageGlow.material.opacity = 0;
     this.isOpen = false;
   }
 
@@ -575,6 +576,16 @@ export class BookModel {
       this.label.visible = this.group.visible;
     }
     if (!this.group.visible) return;
+
+    // Cover-driven air gust: strongest while the cover sweeps
+    // through half-open, decays after the motion stops
+    const dp = this.openProgress - this._lastOpenProgress;
+    this._lastOpenProgress = this.openProgress;
+    const coverRate = Math.abs(dp) / Math.max(dt, 1e-4);
+    const coverMotion = Math.min(1, coverRate / 0.6);
+    const gustEnvelope = Math.sin(Math.PI * this.openProgress);
+    const gustTarget = coverMotion * gustEnvelope;
+    this._gust += (gustTarget - this._gust) * Math.min(1, dt * 8);
 
     // Floating animation
     const floatY = Math.sin(time * this._floatSpeed + this._floatPhase) * this._floatAmp;
@@ -611,14 +622,24 @@ export class BookModel {
       }
     }
 
-    // Page flutter: top few pages wave slightly
-    const flutterCount = Math.min(4, this.pageMeshes.length);
+    // Page flutter: top pages wave slightly, and billow upward
+    // in a staggered ripple when the sweeping cover stirs the air
+    const flutterCount = Math.min(6, this.pageMeshes.length);
     for (let i = 0; i < flutterCount; i++) {
       const pm = this.pageMeshes[this.pageMeshes.length - 1 - i];
+      const depth = i / Math.max(1, flutterCount - 1); // 0 = top page
       const flutterY = Math.sin(time * 0.8 + i * 0.5) * 0.003 * (i + 1) * 0.5;
       const flutterZ = Math.cos(time * 0.6 + i * 0.7) * 0.004 * (i + 1) * 0.3;
-      pm.position.y = pm.userData.baseY + flutterY;
+
+      // Gust ripple travels through the stack from top page downward
+      const gustPhase = this._time * 9 - i * 0.9;
+      const gustWave = Math.max(0, Math.sin(gustPhase));
+      const gustLift = this._gust * gustWave * (0.05 - depth * 0.035);
+      const gustFan = this._gust * Math.sin(gustPhase * 0.8) * 0.05 * (1 - depth * 0.7);
+
+      pm.position.y = pm.userData.baseY + flutterY + gustLift;
       pm.position.z = flutterZ;
+      pm.rotation.x = gustFan;
       // Slight rotation for paper bending
       pm.rotation.z = Math.sin(time * 0.5 + i) * 0.003 * (i + 1);
     }
@@ -702,6 +723,16 @@ function _seededRng(seed) {
   };
 }
 
-function _easeOutCubic(t) {
-  return 1 - Math.pow(1 - t, 3);
+function _easeInOutCubic(t) {
+  return t < 0.5
+    ? 4 * t * t * t
+    : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+// Soft back ease: gentle overshoot so the cover settles
+// naturally after folding flat (like a real hardcover)
+function _easeOutBackSoft(t) {
+  const s = 1.0;
+  const u = t - 1;
+  return 1 + (s + 1) * u * u * u + s * u * u;
 }
